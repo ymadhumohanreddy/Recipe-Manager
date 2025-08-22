@@ -88,40 +88,76 @@
   <div id="recipesContainer"></div>
 
   <script>
-    // Array to store recipes
-    let recipes = [];
-    let idCounter = 1;
+    const API_URL = "http://localhost:3000/recipes";
 
-    // Add a recipe
-    function addRecipe() {
-        // TODO: Get recipe name and ingredients from input fields
-        // TODO: Validate inputs
-        // TODO: Add recipe object with unique id to the recipes array
-        // TODO: Clear input fields
-        // TODO: Call renderRecipes()
+    // Fetch and render recipes from API
+    async function renderRecipes(query = "") {
+        try {
+            const res = await fetch(`${API_URL}?query=${query}`);
+            const recipes = await res.json();
+            const container = document.getElementById('recipesContainer');
+            container.innerHTML = '';
+
+            if (recipes.length === 0) {
+                container.innerHTML = "<p style='text-align:center;'>No recipes found</p>";
+                return;
+            }
+
+            recipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                card.innerHTML = `
+                    <h3>${recipe.name}</h3>
+                    <p>Ingredients: ${recipe.ingredients}</p>
+                    <button onclick="deleteRecipe(${recipe.id})">Delete</button>
+                `;
+                container.appendChild(card);
+            });
+        } catch (err) {
+            console.error("Error fetching recipes:", err);
+        }
     }
 
-    // Delete a recipe
-    function deleteRecipe(id) {
-        // TODO: Remove the recipe with the given id from the recipes array
-        // TODO: Call renderRecipes()
+    // Add a recipe via API
+    async function addRecipe() {
+        const name = document.getElementById('recipeName').value.trim();
+        const ingredients = document.getElementById('ingredients').value.trim();
+        if (!name || !ingredients) {
+            alert("Please enter recipe name and ingredients");
+            return;
+        }
+
+        try {
+            await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, ingredients })
+            });
+            document.getElementById('recipeName').value = '';
+            document.getElementById('ingredients').value = '';
+            renderRecipes();
+        } catch (err) {
+            console.error("Error adding recipe:", err);
+        }
     }
 
-    // Render all recipes
-    function renderRecipes(list = recipes) {
-        // TODO: Get the recipes container
-        // TODO: Clear previous content
-        // TODO: If no recipes, show "No recipes found"
-        // TODO: Loop through recipes array and create recipe cards
-        // TODO: Each card should have recipe name, ingredients, and delete button
-        // TODO: Append recipe cards to container
+    // Delete a recipe via API
+    async function deleteRecipe(id) {
+        try {
+            await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+            renderRecipes();
+        } catch (err) {
+            console.error("Error deleting recipe:", err);
+        }
     }
 
-    // Filter recipes
+    // Filter recipes in real-time
     function filterRecipes(query) {
-        // TODO: Filter the recipes array by recipe name using the query
-        // TODO: Call renderRecipes() with filtered array
+        renderRecipes(query);
     }
+
+    // Initial render
+    renderRecipes();
   </script>
 </body>
 </html>
